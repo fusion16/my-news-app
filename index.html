@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News API Example</title>
+</head>
+<body>
+    <h1>News API Search</h1>
+
+    <!-- Input fields for keyword and date range -->
+    <label for="keyword">Enter keyword:</label>
+    <input type="text" id="keyword" name="keyword" required>
+    <br><br>
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" name="startDate" required>
+    <br><br>
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" name="endDate" required>
+    <br><br>
+
+    <!-- Button to trigger the API call -->
+    <button onclick="fetchNews()">Search News</button>
+
+    <div id="results"></div>
+
+    <script>
+        // Replace with your actual API key from NewsAPI
+        const apiKey = '40aa315c737b4c8ab544e3a210287500';
+
+        function fetchNews() {
+            // Get the user input values
+            const keyword = document.getElementById('keyword').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // Make sure all fields are filled out
+            if (!keyword || !startDate || !endDate) {
+                alert('Please fill out all fields!');
+                return;
+            }
+
+            // CORS proxy URL (allows us to bypass CORS issues)
+            const proxy = 'https://cors-anywhere.herokuapp.com/';
+            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keyword)}&from=${startDate}&to=${endDate}&sortBy=publishedAt&apiKey=${apiKey}`;
+
+            // Using the CORS proxy to make the request
+            fetch(proxy + url)
+                .then(response => response.json())
+                .then(data => {
+                    // Check if the request was successful
+                    if (data.status === 'ok') {
+                        displayResults(data.articles);
+                    } else {
+                        document.getElementById('results').innerHTML = 'No articles found.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('results').innerHTML = 'An error occurred. Please try again.';
+                });
+        }
+
+        // Function to display results
+        function displayResults(articles) {
+            let resultsHtml = '';
+            articles.forEach(article => {
+                resultsHtml += `
+                    <div>
+                        <h3><a href="${article.url}" target="_blank">${article.title}</a></h3>
+                        <p>${article.description}</p>
+                        <p><small>Published on: ${article.publishedAt}</small></p>
+                    </div>
+                    <hr>
+                `;
+            });
+            document.getElementById('results').innerHTML = resultsHtml;
+        }
+    </script>
+</body>
+</html>
