@@ -3,79 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News API Example</title>
+    <title>News Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>News API Search</h1>
+    <h1>News Search</h1>
 
-    <!-- Input fields for keyword and date range -->
-    <label for="keyword">Enter keyword:</label>
-    <input type="text" id="keyword" name="keyword" required>
-    <br><br>
-    <label for="startDate">Start Date:</label>
-    <input type="date" id="startDate" name="startDate" required>
-    <br><br>
-    <label for="endDate">End Date:</label>
-    <input type="date" id="endDate" name="endDate" required>
-    <br><br>
+    <!-- Search Form -->
+    <form id="searchForm">
+        <label for="keyword">Keyword:</label>
+        <input type="text" id="keyword" name="keyword" placeholder="Enter keyword" required>
+        <br><br>
+        <label for="fromDate">From:</label>
+        <input type="date" id="fromDate" name="fromDate" required>
+        <label for="toDate">To:</label>
+        <input type="date" id="toDate" name="toDate" required>
+        <br><br>
+        <button type="submit">Search</button>
+    </form>
 
-    <!-- Button to trigger the API call -->
-    <button onclick="fetchNews()">Search News</button>
-
-    <div id="results"></div>
+    <div id="results">
+        <!-- Results will be displayed here -->
+    </div>
 
     <script>
-        // Replace with your actual API key from NewsAPI
-        const apiKey = '40aa315c737b4c8ab544e3a210287500';
+        const apiKey = "YOUR_API_KEY"; // Replace with your News API key
 
-        function fetchNews() {
-            // Get the user input values
-            const keyword = document.getElementById('keyword').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
+        document.getElementById("searchForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent form submission
 
-            // Make sure all fields are filled out
-            if (!keyword || !startDate || !endDate) {
-                alert('Please fill out all fields!');
+            // Get input values
+            const keyword = document.getElementById("keyword").value;
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+
+            // Validate dates
+            if (!keyword || !fromDate || !toDate) {
+                alert("Please fill in all fields.");
                 return;
             }
 
-            // CORS proxy URL (allows us to bypass CORS issues)
-            const proxy = 'https://cors-anywhere.herokuapp.com/';
-            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keyword)}&from=${startDate}&to=${endDate}&sortBy=publishedAt&apiKey=${apiKey}`;
+            // Build API URL
+            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keyword)}&from=${fromDate}&to=${toDate}&language=en&apiKey=${apiKey}`;
 
-            // Using the CORS proxy to make the request
-            fetch(proxy + url)
-                .then(response => response.json())
+            // Fetch news data
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    // Check if the request was successful
-                    if (data.status === 'ok') {
-                        displayResults(data.articles);
+                    if (data.status === "ok" && data.articles.length > 0) {
+                        // Create table headers
+                        let tableHTML = `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Website</th>
+                                        <th>Title</th>
+                                        <th>Link</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        // Populate table rows with article data
+                        data.articles.forEach(article => {
+                            const date = new Date(article.publishedAt).toLocaleDateString();
+                            const website = article.source.name || "Unknown";
+                            const title = article.title || "No title available";
+                            const link = article.url || "N/A";
+
+                            tableHTML += `
+                                <tr>
+                                    <td>${date}</td>
+                                    <td>${website}</td>
+                                    <td>${title}</td>
+                                    <td>${link}</td>
+                                </tr>
+                            `;
+                        });
+
+                        // Close table
+                        tableHTML += `
+                                </tbody>
+                            </table>
+                        `;
+
+                        // Insert table into results div
+                        document.getElementById("results").innerHTML = tableHTML;
                     } else {
-                        document.getElementById('results').innerHTML = 'No articles found.';
+                        document.getElementById("results").innerHTML = "No results found.";
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching data:', error);
-                    document.getElementById('results').innerHTML = 'An error occurred. Please try again.';
+                    console.error(error);
+                    document.getElementById("results").innerHTML = `<p class="error">An error occurred: ${error.message}. Please try again.</p>`;
                 });
-        }
-
-        // Function to display results
-        function displayResults(articles) {
-            let resultsHtml = '';
-            articles.forEach(article => {
-                resultsHtml += `
-                    <div>
-                        <h3><a href="${article.url}" target="_blank">${article.title}</a></h3>
-                        <p>${article.description}</p>
-                        <p><small>Published on: ${article.publishedAt}</small></p>
-                    </div>
-                    <hr>
-                `;
-            });
-            document.getElementById('results').innerHTML = resultsHtml;
-        }
+        });
     </script>
 </body>
 </html>
