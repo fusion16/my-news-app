@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Khael's Media Update Tool v2</title>
+    <title>Khael's Media Update Tool</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,7 +28,7 @@
     </style>
 </head>
 <body>
-    <h1>Media Update Tool v2</h1>
+    <h1>Media Update Tool v3</h1>
     <form id="searchForm">
         <label for="keyword">Keyword:</label>
         <input type="text" id="keyword" placeholder="e.g., Malaysia" required>
@@ -44,6 +44,7 @@
     <div id="results"></div>
 
     <script>
+        const corsProxy = "https://cors-anywhere.herokuapp.com/";
         const rssFeeds = [
             { name: "Astro Awani", url: "https://www.astroawani.com/rss/latest/news.xml" },
             { name: "The Star", url: "https://www.thestar.com.my/rss/latest" },
@@ -74,7 +75,7 @@
             let feedCount = rssFeeds.length;
 
             rssFeeds.forEach(feed => {
-                fetch(feed.url)
+                fetch(corsProxy + feed.url)
                     .then(response => {
                         if (!response.ok) throw new Error(`Error fetching ${feed.name}`);
                         return response.text();
