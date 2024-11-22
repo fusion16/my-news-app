@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Khael's Media Update Tool</title>
+    <title>Khael's Media Update Tool v4</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,17 +21,13 @@
         th {
             background-color: #f4f4f4;
         }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
-    <h1>Media Update Tool v3</h1>
+    <h1>Media Update Tool v4</h1>
     <form id="searchForm">
         <label for="keyword">Keyword:</label>
-        <input type="text" id="keyword" placeholder="e.g., Malaysia" required>
+        <input type="text" id="keyword" placeholder="e.g., Malaysia">
         <br><br>
         <label for="startDate">Start Date:</label>
         <input type="date" id="startDate">
@@ -44,84 +40,50 @@
     <div id="results"></div>
 
     <script>
-        const corsProxy = "https://cors-anywhere.herokuapp.com/";
-        const rssFeeds = [
-            { name: "Astro Awani", url: "https://www.astroawani.com/rss/latest/news.xml" },
-            { name: "The Star", url: "https://www.thestar.com.my/rss/latest" },
-            { name: "The Edge", url: "https://www.theedgemarkets.com/rss.xml" },
-            { name: "Sinar Harian", url: "https://www.sinarharian.com.my/rss/latest" },
-            { name: "Utusan Malaysia", url: "https://www.utusan.com.my/feed/" }
-        ];
-
         document.getElementById("searchForm").addEventListener("submit", function (e) {
             e.preventDefault();
-            const keyword = document.getElementById("keyword").value.toLowerCase();
-            const startDate = new Date(document.getElementById("startDate").value);
-            const endDate = new Date(document.getElementById("endDate").value);
+            const keyword = document.getElementById("keyword").value;
+            const startDate = document.getElementById("startDate").value;
+            const endDate = document.getElementById("endDate").value;
 
-            document.getElementById("results").innerHTML = "Loading...";
-            let resultsHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Website</th>
-                            <th>Title</th>
-                            <th>Link</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            let feedCount = rssFeeds.length;
-
-            rssFeeds.forEach(feed => {
-                fetch(corsProxy + feed.url)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`Error fetching ${feed.name}`);
-                        return response.text();
-                    })
-                    .then(data => {
-                        const parser = new DOMParser();
-                        const xmlDoc = parser.parseFromString(data, "application/xml");
-                        const items = xmlDoc.querySelectorAll("item");
-
-                        items.forEach(item => {
-                            const title = item.querySelector("title").textContent;
-                            const link = item.querySelector("link").textContent;
-                            const pubDate = item.querySelector("pubDate").textContent;
-                            const description = item.querySelector("description")?.textContent || "";
-
-                            const itemDate = new Date(pubDate);
-
-                            // Filter by keyword and date range
-                            if (
-                                (title.toLowerCase().includes(keyword) || description.toLowerCase().includes(keyword)) &&
-                                (!isNaN(startDate.getTime()) ? itemDate >= startDate : true) &&
-                                (!isNaN(endDate.getTime()) ? itemDate <= endDate : true)
-                            ) {
-                                const date = itemDate.toLocaleDateString();
-                                resultsHTML += `
-                                    <tr>
-                                        <td>${date}</td>
-                                        <td>${feed.name}</td>
-                                        <td>${title}</td>
-                                        <td><a href="${link}" target="_blank">${link}</a></td>
-                                    </tr>
-                                `;
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        feedCount--;
-                        if (feedCount === 0) {
-                            resultsHTML += `</tbody></table>`;
-                            document.getElementById("results").innerHTML = resultsHTML || "No results found.";
-                        }
-                    });
+            const query = new URLSearchParams({
+                keyword: keyword,
+                startDate: startDate,
+                endDate: endDate
             });
+
+            fetch("rss-fetcher.php?" + query)
+                .then(response => response.json())
+                .then(data => {
+                    let resultsHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Website</th>
+                                    <th>Title</th>
+                                    <th>Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.forEach(item => {
+                        resultsHTML += `
+                            <tr>
+                                <td>${item.date}</td>
+                                <td>${item.website}</td>
+                                <td>${item.title}</td>
+                                <td><a href="${item.link}" target="_blank">${item.link}</a></td>
+                            </tr>
+                        `;
+                    });
+                    resultsHTML += `</tbody></table>`;
+                    document.getElementById("results").innerHTML = resultsHTML || "No results found.";
+                })
+                .catch(error => {
+                    console.error(error);
+                    document.getElementById("results").innerHTML = "An error occurred. Please try again.";
+                });
         });
     </script>
 </body>
