@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Search</title>
+    <title>GNews Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
             padding: 20px;
-        }
-        form {
-            margin-bottom: 20px;
         }
         table {
             width: 100%;
@@ -21,7 +17,6 @@
         th, td {
             border: 1px solid #ddd;
             padding: 10px;
-            text-align: left;
         }
         th {
             background-color: #f4f4f4;
@@ -33,93 +28,68 @@
     </style>
 </head>
 <body>
-    <h1>News Search</h1>
-
-    <!-- Search Form -->
+    <h1>Media Update Tool v1</h1>
     <form id="searchForm">
         <label for="keyword">Keyword:</label>
-        <input type="text" id="keyword" name="keyword" placeholder="Enter keyword" required>
+        <input type="text" id="keyword" required>
         <br><br>
         <label for="fromDate">From:</label>
-        <input type="date" id="fromDate" name="fromDate" required>
+        <input type="date" id="fromDate" required>
         <label for="toDate">To:</label>
-        <input type="date" id="toDate" name="toDate" required>
+        <input type="date" id="toDate" required>
         <br><br>
         <button type="submit">Search</button>
     </form>
 
-    <div id="results">
-        <!-- Results will be displayed here -->
-    </div>
+    <div id="results"></div>
 
     <script>
-        const apiKey = "40aa315c737b4c8ab544e3a210287500"; // Replace with your News API key
+        const apiKey = "ef6036ae00ee52d862989ca63b4eba55"; // Replace with your GNews API key
 
-        document.getElementById("searchForm").addEventListener("submit", function(event) {
-            event.preventDefault(); // Prevent form submission
+        document.getElementById("searchForm").addEventListener("submit", function (e) {
+            e.preventDefault();
 
-            // Get input values
             const keyword = document.getElementById("keyword").value;
             const fromDate = document.getElementById("fromDate").value;
             const toDate = document.getElementById("toDate").value;
 
-            // Validate dates
-            if (!keyword || !fromDate || !toDate) {
-                alert("Please fill in all fields.");
-                return;
-            }
+            const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(keyword)}&from=${fromDate}&to=${toDate}&token=${apiKey}`;
 
-            // Build API URL
-            const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keyword)}&from=${fromDate}&to=${toDate}&language=en&apiKey=${apiKey}`;
-
-            // Fetch news data
             fetch(url)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`Error: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
-                    if (data.status === "ok" && data.articles.length > 0) {
-                        // Create table headers
+                    if (data.articles.length > 0) {
                         let tableHTML = `
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Date</th>
-                                        <th>Website</th>
+                                        <th>Source</th>
                                         <th>Title</th>
-                                        <th>Link</th>
+                                        <th>URL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                         `;
-
-                        // Populate table rows with article data
                         data.articles.forEach(article => {
                             const date = new Date(article.publishedAt).toLocaleDateString();
-                            const website = article.source.name || "Unknown";
-                            const title = article.title || "No title available";
-                            const link = article.url || "N/A";
+                            const source = article.source.name || "Unknown";
+                            const title = article.title || "No title";
+                            const url = article.url || "N/A";
 
                             tableHTML += `
                                 <tr>
                                     <td>${date}</td>
-                                    <td>${website}</td>
+                                    <td>${source}</td>
                                     <td>${title}</td>
-                                    <td>${link}</td>
+                                    <td>${url}</td>
                                 </tr>
                             `;
                         });
-
-                        // Close table
-                        tableHTML += `
-                                </tbody>
-                            </table>
-                        `;
-
-                        // Insert table into results div
+                        tableHTML += `</tbody></table>`;
                         document.getElementById("results").innerHTML = tableHTML;
                     } else {
                         document.getElementById("results").innerHTML = "No results found.";
@@ -127,7 +97,7 @@
                 })
                 .catch(error => {
                     console.error(error);
-                    document.getElementById("results").innerHTML = `<p class="error">An error occurred: ${error.message}. Please try again.</p>`;
+                    document.getElementById("results").innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
                 });
         });
     </script>
