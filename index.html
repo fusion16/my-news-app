@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direct RSS Feed Parser</title>
+    <title>Khael's Media Update Tool v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,10 +28,15 @@
     </style>
 </head>
 <body>
-    <h1>Search Malaysian News from RSS Feeds</h1>
+    <h1>Media Update Tool v2</h1>
     <form id="searchForm">
         <label for="keyword">Keyword:</label>
         <input type="text" id="keyword" placeholder="e.g., Malaysia" required>
+        <br><br>
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate">
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate">
         <br><br>
         <button type="submit">Search</button>
     </form>
@@ -50,6 +55,9 @@
         document.getElementById("searchForm").addEventListener("submit", function (e) {
             e.preventDefault();
             const keyword = document.getElementById("keyword").value.toLowerCase();
+            const startDate = new Date(document.getElementById("startDate").value);
+            const endDate = new Date(document.getElementById("endDate").value);
+
             document.getElementById("results").innerHTML = "Loading...";
             let resultsHTML = `
                 <table>
@@ -69,7 +77,7 @@
                 fetch(feed.url)
                     .then(response => {
                         if (!response.ok) throw new Error(`Error fetching ${feed.name}`);
-                        return response.text(); // RSS feed is XML; get as text
+                        return response.text();
                     })
                     .then(data => {
                         const parser = new DOMParser();
@@ -82,11 +90,15 @@
                             const pubDate = item.querySelector("pubDate").textContent;
                             const description = item.querySelector("description")?.textContent || "";
 
+                            const itemDate = new Date(pubDate);
+
+                            // Filter by keyword and date range
                             if (
-                                title.toLowerCase().includes(keyword) || 
-                                description.toLowerCase().includes(keyword)
+                                (title.toLowerCase().includes(keyword) || description.toLowerCase().includes(keyword)) &&
+                                (!isNaN(startDate.getTime()) ? itemDate >= startDate : true) &&
+                                (!isNaN(endDate.getTime()) ? itemDate <= endDate : true)
                             ) {
-                                const date = new Date(pubDate).toLocaleDateString();
+                                const date = itemDate.toLocaleDateString();
                                 resultsHTML += `
                                     <tr>
                                         <td>${date}</td>
