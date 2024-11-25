@@ -52,9 +52,11 @@
                 endDate: endDate
             });
 
-            fetch("rss-fetcher.php?" + query)
+            fetch("http://listener.free.nf/rss-fetcher.php")
                 .then(response => response.json())
                 .then(data => {
+                console.log(data);
+                    //Process and display the RSS data
                     let resultsHTML = `
                         <table>
                             <thead>
